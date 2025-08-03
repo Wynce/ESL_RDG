@@ -1,187 +1,235 @@
-<!DOCTYPE html>
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Volunteering Abroad Game</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.9/babel.min.js"></script>
-  <style>
-    body {
-      background: linear-gradient(to right, #e0f7fa, #b2ebf2);
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IGCSE Second Language English - Volunteering Abroad Matching Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.9/babel.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(to right, #e0f7fa, #b2ebf2);
+            font-family: Arial, sans-serif;
+        }
+    </style>
 </head>
 <body>
-  <div id="root"></div>
-  <script type="text/babel">
-    const texts = [/* same as before */];
-    const questions = [/* same as before */];
+    <div id="root"></div>
+    <script type="text/babel">
+        const texts = [
+            {
+                id: 'A',
+                title: 'Building Schools in Kenya',
+                content: 'Volunteering in Kenya was life-changing for 18-year-old Sarah. She joined a project to build schools in rural areas. The work was physically demanding, requiring her to mix cement and carry bricks under the hot sun. Despite the challenges, she felt immense pride seeing children use the new classrooms. The local community welcomed her warmly, sharing meals and stories. Sarah learned basic Swahili to communicate better, which helped her connect with the children. She plans to return next year to continue the work.'
+            },
+            {
+                id: 'B',
+                title: 'Teaching English in Thailand',
+                content: 'Ahmed, a university student, spent his summer teaching English to teenagers in Thailand. He worked in a small village school with limited resources, often creating his own teaching materials. The students were eager to learn, though shy at first. Ahmed used games and songs to make lessons fun, which helped build their confidence. Living with a host family gave him insight into Thai culture, including their festivals and food. He felt the experience improved his leadership skills and patience.'
+            },
+            {
+                id: 'C',
+                title: 'Conservation Work in Costa Rica',
+                content: 'Maria volunteered in Costa Rica to protect endangered sea turtles. Her tasks included patrolling beaches at night to guard turtle nests and collecting data on hatchlings. The work was exhausting, and she often felt isolated due to the remote location. However, witnessing baby turtles reach the ocean was rewarding. Maria also learned about local environmental issues and the importance of sustainable practices. She made friends with other international volunteers, which made the experience more enjoyable.'
+            },
+            {
+                id: 'D',
+                title: 'Medical Support in Peru',
+                content: 'Liam, a medical student, volunteered in a clinic in Peru. He assisted nurses with basic tasks like checking patients’ temperatures and organizing supplies. The clinic served a poor community with limited access to healthcare. Liam was shocked by the lack of equipment but inspired by the dedication of the local staff. He learned some Spanish to communicate with patients, which was challenging but rewarding. The experience confirmed his desire to become a doctor and work in underserved areas.'
+            },
+            {
+                id: 'E',
+                title: 'Orphanage Work in India',
+                content: 'Priya spent three months at an orphanage in India, caring for young children. She helped with daily tasks like feeding, teaching basic math, and organizing games. The children’s resilience despite their hardships touched her deeply. Priya faced emotional challenges, as some children were very withdrawn. She learned to be patient and creative in engaging them. The orphanage staff taught her about Indian traditions, and she participated in a local festival. Priya felt the experience made her more compassionate.'
+            }
+        ];
 
-    function TextCard({ text }) {
-      return (
-        <div className="bg-white p-4 rounded-lg shadow-md mb-4 border-l-4 border-cyan-500">
-          <h3 className="text-lg font-bold text-cyan-800">{text.title} (Text {text.id})</h3>
-          <p className="text-gray-700">{text.content}</p>
-        </div>
-      );
-    }
+        const questions = [
+            { id: 1, text: 'Which text describes a volunteer improving their language skills to connect with locals?', answer: 'A' },
+            { id: 2, text: 'Which text mentions volunteering in a healthcare setting?', answer: 'D' },
+            { id: 3, text: 'Which text highlights the emotional challenges of working with children?', answer: 'E' },
+            { id: 4, text: 'Which text describes a volunteer participating in a local cultural festival?', answer: 'E' },
+            { id: 5, text: 'Which text focuses on protecting wildlife?', answer: 'C' },
+            { id: 6, text: 'Which text mentions the volunteer creating their own resources for the work?', answer: 'B' },
+            { id: 7, text: 'Which text describes physically demanding volunteer work?', answer: 'A' },
+            { id: 8, text: 'Which text mentions the volunteer feeling inspired by local staff?', answer: 'D' },
+            { id: 9, text: 'Which text describes forming friendships with other volunteers?', answer: 'C' }
+        ];
 
-    function QuestionCard({ question, onSelect, selectedAnswer, isCorrect, showAnswers }) {
-      return (
-        <div className="bg-white p-4 rounded-lg shadow-md mb-4 border border-gray-300">
-          <div className="flex justify-between items-center">
-            <p className="text-gray-800 font-medium">{question.text}</p>
-            {showAnswers && (
-              <span className={`text-xl ${isCorrect ? 'text-green-600' : 'text-red-600'}`}>
-                {isCorrect ? '✅' : '❌'}
-              </span>
-            )}
-          </div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {texts.map((text) => (
-              <button
-                key={text.id}
-                onClick={() => onSelect(question.id, text.id)}
-                className={`px-4 py-2 rounded-lg text-white font-semibold
-                  ${selectedAnswer === text.id
-                    ? showAnswers
-                      ? isCorrect
-                        ? 'bg-green-500'
-                        : 'bg-red-500'
-                      : 'bg-cyan-600'
-                    : 'bg-cyan-400 hover:bg-cyan-500'}`}
-              >
-                Text {text.id}
-              </button>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    function ProgressBar({ current, total }) {
-      const percent = (current / total) * 100;
-      return (
-        <div className="my-6">
-          <div className="w-full bg-gray-200 rounded-full h-4">
-            <div
-              className="bg-cyan-600 h-4 rounded-full transition-all"
-              style={{ width: `${percent}%` }}
-            ></div>
-          </div>
-          <p className="text-sm text-gray-600 mt-1">{current} of {total} answered</p>
-        </div>
-      );
-    }
-
-    function App() {
-      const [answers, setAnswers] = React.useState({});
-      const [showAnswers, setShowAnswers] = React.useState(false);
-      const [score, setScore] = React.useState(null);
-
-      const handleSelect = (questionId, textId) => {
-        if (!showAnswers) {
-          setAnswers({ ...answers, [questionId]: textId });
+        function TextCard({ text }) {
+            return (
+                <div className="bg-white p-4 rounded-lg shadow-md mb-4">
+                    <h3 className="text-lg font-bold text-cyan-800">{text.title} (Text {text.id})</h3>
+                    <p className="text-gray-700">{text.content}</p>
+                </div>
+            );
         }
-      };
 
-      const handleSubmit = () => {
-        let correctCount = 0;
-        questions.forEach((q) => {
-          if (answers[q.id] === q.answer) {
-            correctCount++;
-          }
-        });
-        setScore(correctCount);
-        setShowAnswers(true);
-      };
+        function QuestionCard({ question, onSelect, selectedAnswer, isCorrect, showAnswers }) {
+            return (
+                <div className="bg-white p-4 rounded-lg shadow-md mb-4">
+                    <p className="text-gray-800 font-medium">{question.text}</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                        {texts.map((text) => (
+                            <button
+                                key={text.id}
+                                onClick={() => onSelect(question.id, text.id)}
+                                className={`px-4 py-2 rounded-lg text-white font-semibold
+                                    ${selectedAnswer === text.id
+                                        ? showAnswers
+                                            ? isCorrect
+                                                ? 'bg-green-500'
+                                                : 'bg-red-500'
+                                            : 'bg-cyan-600'
+                                        : 'bg-cyan-400 hover:bg-cyan-500'}`}
+                            >
+                                Text {text.id}
+                            </button>
+                        ))}
+                    </div>
+                    {showAnswers && (
+                        <p className="mt-2 text-sm">
+                            {isCorrect
+                                ? <span className="text-green-600">Correct! The answer is Text {question.answer}.</span>
+                                : <span className="text-red-600">Incorrect. The correct answer is Text {question.answer}.</span>}
+                        </p>
+                    )}
+                </div>
+            );
+        }
 
-      const handleReset = () => {
-        setAnswers({});
-        setShowAnswers(false);
-        setScore(null);
-      };
+        function App() {
+            const [answers, setAnswers] = React.useState({});
+            const [showAnswers, setShowAnswers] = React.useState(false);
+            const [score, setScore] = React.useState(null);
 
-      const getEmoji = () => {
-        if (score === questions.length) return '🏆';
-        if (score >= 6) return '🎉';
-        if (score >= 3) return '👍';
-        return '😅';
-      };
+            const handleSelect = (questionId, textId) => {
+                if (!showAnswers) {
+                    setAnswers({ ...answers, [questionId]: textId });
+                }
+            };
 
-      return (
-        <div className="max-w-4xl mx-auto p-6">
-          <h1 className="text-3xl font-bold text-cyan-900 mb-4 text-center">
-            Volunteering Abroad Matching Game 🌍
-          </h1>
-          <p className="text-gray-700 mb-6 text-center">
-            Read the five texts and match each question to the correct one. Test your global reading skills!
-          </p>
+            const handleSubmit = () => {
+                let correctCount = 0;
+                questions.forEach((q) => {
+                    if (answers[q.id] === q.answer) {
+                        correctCount++;
+                    }
+                });
+                setScore(correctCount);
+                setShowAnswers(true);
+            };
 
-          <div className="mb-8">
-            {texts.map((text) => (
-              <TextCard key={text.id} text={text} />
-            ))}
-          </div>
+            const handleReset = () => {
+                setAnswers({});
+                setShowAnswers(false);
+                setScore(null);
+            };
 
-          <h2 className="text-2xl font-semibold text-cyan-800 mb-2">Questions</h2>
+            return (
+                <div className="max-w-4xl mx-auto p-6">
+                    <h1 className="text-3xl font-bold text-cyan-900 mb-6 text-center">
+                        Volunteering Abroad Matching Game
+                    </h1>
+                    <p className="text-gray-700 mb-4 text-center">
+                        Read the five texts below and match each question to the correct text (A–E). Click a text button to select your answer. Submit to see your score!
+                    </p>
 
-          <ProgressBar current={Object.keys(answers).length} total={questions.length} />
+                    <div className="mb-8">
+                        {texts.map((text) => (
+                            <TextCard key={text.id} text={text} />
+                        ))}
+                    </div>
 
-          {questions.map((question) => (
-            <QuestionCard
-              key={question.id}
-              question={question}
-              onSelect={handleSelect}
-              selectedAnswer={answers[question.id]}
-              isCorrect={answers[question.id] === question.answer}
-              showAnswers={showAnswers}
-            />
-          ))}
+                    <h2 className="text-2xl font-semibold text-cyan-800 mb-4">Questions</h2>
+                    {questions.map((question) => (
+                        <QuestionCard
+                            key={question.id}
+                            question={question}
+                            onSelect={handleSelect}
+                            selectedAnswer={answers[question.id]}
+                            isCorrect={answers[question.id] === question.answer}
+                            showAnswers={showAnswers}
+                        />
+                    ))}
 
-          <div className="flex justify-center gap-4 mt-6">
-            {!showAnswers ? (
-              <button
-                onClick={handleSubmit}
-                className="px-6 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 disabled:bg-gray-400"
-                disabled={Object.keys(answers).length < questions.length}
-              >
-                Submit Answers
-              </button>
-            ) : (
-              <button
-                onClick={handleReset}
-                className="px-6 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700"
-              >
-                Try Again
-              </button>
-            )}
-          </div>
+                    <div className="flex justify-center gap-4 mt-6">
+                        {!showAnswers ? (
+                            <button
+                                onClick={handleSubmit}
+                                className="px-6 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700"
+                                disabled={Object.keys(answers).length < questions.length}
+                            >
+                                Submit Answers
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleReset}
+                                className="px-6 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700"
+                            >
+                                Try Again
+                            </button>
+                        )}
+                    </div>
 
-          {showAnswers && (
-            <div className="mt-6 text-center">
-              <p className="text-xl font-semibold text-cyan-900">
-                {getEmoji()} Your Score: {score} / {questions.length}
-              </p>
-              <p className="text-gray-700">
-                {score === questions.length
-                  ? 'Perfect! 🌟 You nailed it!'
-                  : 'Review your answers and give it another shot!'}
-              </p>
-            </div>
-          )}
-        </div>
-      );
-    }
+                    {showAnswers && (
+                        <div className="mt-6 text-center">
+                            <p className="text-xl font-semibold text-cyan-900">
+                                Your Score: {score} out of {questions.length}
+                            </p>
+                            <p className="text-gray-700">
+                                {score === questions.length
+                                    ? 'Perfect! You got all answers correct!'
+                                    : 'Good effort! Review the correct answers and try again!'}
+                            </p>
+                        </div>
+                    )}
+                </div>
+            );
+        }
 
-    // Import content from external file
-    const texts = [...]; // use your existing 5 texts
-    const questions = [...]; // use your existing 9 questions
-
-    ReactDOM.render(<App />, document.getElementById('root'));
-  </script>
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
 </body>
 </html>
